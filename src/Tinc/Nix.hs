@@ -132,35 +132,30 @@ resolverDerivation :: Facts -> [(Package, [HaskellDependency], [SystemDependency
 resolverDerivation facts@Facts{..} dependencies = do
   overrides <- concat <$> mapM getPkgDerivation dependencies
   return . unlines $ [
-      "{ nixpkgs }:"
+      "{ nixpkgs, haskellPackages }:"
     , "rec {"
-    , "  compiler = nixpkgs." ++ formatNixResolver facts ++ ";"
-    , "  resolver ="
-    ] ++ indent 4 [
-      "let"
+    , "  compiler    = haskellPackages;"
     , "  callPackage = compiler.callPackage;"
-    , ""
-    , "  overrideFunction = self: super: rec {"
-    ] ++ indent 8 overrides ++
-    indent 4 [
+    , "  packages    = rec {"
+    ] ++ indent 4 overrides ++ [
       "  };"
     , ""
-    , "  newResolver = compiler.override {"
-    , "    overrides = overrideFunction;"
-    , "  };"
-    , ""
-    , "in newResolver;"
-    ] ++ ["}"]
+    , "  resolver = let overrideFunction = self: super: packages; in"
+    , "    compiler.override {"
+    , "      overrides = overrideFunction;"
+    , "    };"
+    , "}"
+    ]
   where
     getPkgDerivation packageDeps@(package, _, _) = pkgImport packageDeps <$> readFile (derivationFile factsNixCache package)
 
 pkgImport :: (Package, [HaskellDependency], [SystemDependency]) -> NixExpression -> [String]
 pkgImport ((Package name _), haskellDependencies, systemDependencies) derivation = begin : indent 2 definition
   where
-    begin = name ++ " = callPackage"
+    begin = name ++ " = { func = "
     derivationLines = lines derivation
-    inlineDerivation = ["("] ++ indent 2 derivationLines ++ [")"]
-    args = "{ " ++ inheritHaskellDependencies ++ inheritSystemDependencies ++ "};"
+    inlineDerivation = indent 2 derivationLines
+    args = "; args = { " ++ inheritHaskellDependencies ++ inheritSystemDependencies ++ "}; };"
     definition = inlineDerivation ++ [args]
     inheritHaskellDependencies
       | null haskellDependencies = ""

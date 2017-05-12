@@ -92,15 +92,6 @@ spec = do
           parseAddSourceDependencies [Dependency "foo" (Just $ GitRef "https://github.com/sol/hpack" "dev" Nothing), "bar"] `shouldReturn`
             [AddSourceDependency "foo" (Git "https://github.com/sol/hpack" "dev" Nothing)]
 
-    context "when package.yaml can not be parsed" $ do
-      it "throws an exception" $ do
-        inTempDirectory $ do
-          writeFile "package.yaml" $ unlines [
-              "ghc-options: 23"
-            , "library: {}"
-            ]
-          parseAddSourceDependencies [] `shouldThrow` errorCall "package.yaml: Error in $['ghc-options']: expected String, encountered Number"
-
     context "when package.yaml does not exist" $ do
       it "returns an empty list" $ do
         inTempDirectory $ do

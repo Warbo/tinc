@@ -37,12 +37,10 @@ spec = do
           , "mkDerivation { some derivation; }"
           ]
         inlined = [
-            "foo = callPackage"
-          , "  ("
+            "foo = { func = "
           , "    { mkDerivation }:"
           , "    mkDerivation { some derivation; }"
-          , "  )"
-          , "  { };"
+          , "  ; args = { }; };"
           ]
       pkgImport (Package "foo" "0.1.0", [], []) derivation `shouldBe` inlined;
 
@@ -54,12 +52,10 @@ spec = do
             , "mkDerivation { some derivation; }"
             ]
           inlined = [
-              "foo = callPackage"
-            , "  ("
+              "foo = { func = "
             , "    { mkDerivation, bar, baz }:"
             , "    mkDerivation { some derivation; }"
-            , "  )"
-            , "  { inherit bar baz; };"
+            , "  ; args = { inherit bar baz; }; };"
             ]
         pkgImport (Package "foo" "0.1.0", ["bar", "baz"], []) derivation `shouldBe` inlined
 
@@ -71,17 +67,15 @@ spec = do
             , "mkDerivation { some derivation; }"
             ]
           inlined = [
-              "foo = callPackage"
-            , "  ("
+              "foo = { func = "
             , "    { mkDerivation, bar }:"
             , "    mkDerivation { some derivation; }"
-            , "  )"
-            , "  { inherit (nixpkgs) bar; };"
+            , "  ; args = { inherit (nixpkgs) bar; }; };"
             ]
         pkgImport (Package "foo" "0.1.0", [], ["bar"]) derivation `shouldBe` inlined;
 
-  describe "resolverDerivation" $ do
-    it "generates resolver derivation" $ do
+  describe "packagesDerivation" $ do
+    it "generates packages derivation" $ do
       let dependencies = [
               (Package "foo" "0.1.0", [], [])
             , (Package "bar" "0.1.0", ["foo"], ["baz"])
@@ -95,33 +89,25 @@ spec = do
             , "mkDerivation { some derivation; }"
             ]
           resolver = unlines [
-              "{ nixpkgs }:"
+              "{ nixpkgs, haskellPackages }:"
             , "rec {"
-            , "  compiler = nixpkgs.haskellPackages;"
-            , "  resolver ="
-            , "    let"
-            , "      callPackage = compiler.callPackage;"
+            , "  compiler    = haskellPackages;"
+            , "  callPackage = compiler.callPackage;"
+            , "  packages    = rec {"
+            , "    foo = { func = "
+            , "        { mkDerivation, base }:"
+            , "        mkDerivation { some derivation; }"
+            , "      ; args = { }; };"
+            , "    bar = { func = "
+            , "        { mkDerivation, base, foo, baz }:"
+            , "        mkDerivation { some derivation; }"
+            , "      ; args = { inherit foo; inherit (nixpkgs) baz; }; };"
+            , "  };"
             , ""
-            , "      overrideFunction = self: super: rec {"
-            , "        foo = callPackage"
-            , "          ("
-            , "            { mkDerivation, base }:"
-            , "            mkDerivation { some derivation; }"
-            , "          )"
-            , "          { };"
-            , "        bar = callPackage"
-            , "          ("
-            , "            { mkDerivation, base, foo, baz }:"
-            , "            mkDerivation { some derivation; }"
-            , "          )"
-            , "          { inherit foo; inherit (nixpkgs) baz; };"
-            , "      };"
-            , ""
-            , "      newResolver = compiler.override {"
-            , "        overrides = overrideFunction;"
-            , "      };"
-            , ""
-            , "    in newResolver;"
+            , "  resolver = let overrideFunction = self: super: packages; in"
+            , "    compiler.override {"
+            , "      overrides = overrideFunction;"
+            , "    };"
             , "}"
             ]
 

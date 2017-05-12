@@ -1,3 +1,8 @@
+# FIXME: This is a hacked version of tinc, which breaks the Nix output in order
+# to avoid globals and allow more overriding. If it is useful, it should be
+# cleaned up (e.g. integrated into the existing output, rather than replacing
+# it) and upstreamed!
+
 # tinc: A dependency manager for Haskell
 
 `tinc` installs dependencies for a project that you work on into a sandbox.

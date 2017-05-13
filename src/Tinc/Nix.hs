@@ -140,10 +140,10 @@ resolverDerivation facts@Facts{..} dependencies = do
     ] ++ indent 4 overrides ++ [
       "  };"
     , ""
-    , "  resolver = let overrideFunction = self: super: packages; in"
-    , "    compiler.override {"
-    , "      overrides = overrideFunction;"
-    , "    };"
+    , "  resolver = compiler.override {"
+    , "    overrides = self: super:"
+    , "      mapAttrs (_: { func, args }: self.callPackage func args) packages;"
+    , "  };"
     , "}"
     ]
   where

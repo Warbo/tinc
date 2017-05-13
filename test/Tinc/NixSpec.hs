@@ -104,10 +104,10 @@ spec = do
             , "      ; args = { inherit foo; inherit (nixpkgs) baz; }; };"
             , "  };"
             , ""
-            , "  resolver = let overrideFunction = self: super: packages; in"
-            , "    compiler.override {"
-            , "      overrides = overrideFunction;"
-            , "    };"
+            , "  resolver = compiler.override {"
+            , "    overrides = self: super:"
+            , "      mapAttrs (_: { func, args }: self.callPackage func args) packages;"
+            , "  };"
             , "}"
             ]
 

@@ -142,6 +142,7 @@ resolverDerivation facts@Facts{..} dependencies = do
     , ""
     , "  resolver = compiler.override {"
     , "    overrides = self: super:"
+    , "      with nixpkgs.lib;"
     , "      mapAttrs (_: { func, args }: self.callPackage func args) packages;"
     , "  };"
     , "}"

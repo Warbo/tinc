@@ -135,15 +135,12 @@ resolverDerivation facts@Facts{..} dependencies = do
       "{ nixpkgs, haskellPackages }:"
     , "rec {"
     , "  compiler    = haskellPackages;"
-    , "  callPackage = compiler.callPackage;"
-    , "  packages    = rec {"
+    , "  packages    = { callPackage }: rec {"
     ] ++ indent 4 overrides ++ [
       "  };"
     , ""
     , "  resolver = compiler.override {"
-    , "    overrides = self: super:"
-    , "      with nixpkgs.lib;"
-    , "      mapAttrs (_: { func, args }: self.callPackage func args) packages;"
+    , "    overrides = self: super: packages { inherit (self) callPackage; };"
     , "  };"
     , "}"
     ]
@@ -153,10 +150,10 @@ resolverDerivation facts@Facts{..} dependencies = do
 pkgImport :: (Package, [HaskellDependency], [SystemDependency]) -> NixExpression -> [String]
 pkgImport ((Package name _), haskellDependencies, systemDependencies) derivation = begin : indent 2 definition
   where
-    begin = name ++ " = { func = "
+    begin = name ++ " = callPackage ("
     derivationLines = lines derivation
     inlineDerivation = indent 2 derivationLines
-    args = "; args = { " ++ inheritHaskellDependencies ++ inheritSystemDependencies ++ "}; };"
+    args = ") { " ++ inheritHaskellDependencies ++ inheritSystemDependencies ++ "};"
     definition = inlineDerivation ++ [args]
     inheritHaskellDependencies
       | null haskellDependencies = ""

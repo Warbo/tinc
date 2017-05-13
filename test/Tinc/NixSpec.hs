@@ -37,10 +37,10 @@ spec = do
           , "mkDerivation { some derivation; }"
           ]
         inlined = [
-            "foo = { func = "
+            "foo = callPackage ("
           , "    { mkDerivation }:"
           , "    mkDerivation { some derivation; }"
-          , "  ; args = { }; };"
+          , "  ) { };"
           ]
       pkgImport (Package "foo" "0.1.0", [], []) derivation `shouldBe` inlined;
 
@@ -52,10 +52,10 @@ spec = do
             , "mkDerivation { some derivation; }"
             ]
           inlined = [
-              "foo = { func = "
+              "foo = callPackage ("
             , "    { mkDerivation, bar, baz }:"
             , "    mkDerivation { some derivation; }"
-            , "  ; args = { inherit bar baz; }; };"
+            , "  ) { inherit bar baz; };"
             ]
         pkgImport (Package "foo" "0.1.0", ["bar", "baz"], []) derivation `shouldBe` inlined
 
@@ -67,10 +67,10 @@ spec = do
             , "mkDerivation { some derivation; }"
             ]
           inlined = [
-              "foo = { func = "
+              "foo = callPackage ("
             , "    { mkDerivation, bar }:"
             , "    mkDerivation { some derivation; }"
-            , "  ; args = { inherit (nixpkgs) bar; }; };"
+            , "  ) { inherit (nixpkgs) bar; };"
             ]
         pkgImport (Package "foo" "0.1.0", [], ["bar"]) derivation `shouldBe` inlined;
 
@@ -92,22 +92,19 @@ spec = do
               "{ nixpkgs, haskellPackages }:"
             , "rec {"
             , "  compiler    = haskellPackages;"
-            , "  callPackage = compiler.callPackage;"
-            , "  packages    = rec {"
-            , "    foo = { func = "
+            , "  packages    = { callPackage }: rec {"
+            , "    foo = callPackage ("
             , "        { mkDerivation, base }:"
             , "        mkDerivation { some derivation; }"
-            , "      ; args = { }; };"
-            , "    bar = { func = "
+            , "      ) { };"
+            , "    bar = callPackage ("
             , "        { mkDerivation, base, foo, baz }:"
             , "        mkDerivation { some derivation; }"
-            , "      ; args = { inherit foo; inherit (nixpkgs) baz; }; };"
+            , "      ) { inherit foo; inherit (nixpkgs) baz; };"
             , "  };"
             , ""
             , "  resolver = compiler.override {"
-            , "    overrides = self: super:"
-            , "      with nixpkgs.lib;"
-            , "      mapAttrs (_: { func, args }: self.callPackage func args) packages;"
+            , "    overrides = self: super: packages { inherit (self) callPackage; };"
             , "  };"
             , "}"
             ]
